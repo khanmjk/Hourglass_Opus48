@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# local Claude Code config (machine-specific)
+.claude/settings.local.json
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
+.vite/

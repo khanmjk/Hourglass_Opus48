@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Hourglass · Sands of Time</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- 3D viewport -->
+    <canvas id="scene"></canvas>
+
+    <!-- Loading overlay -->
+    <div id="loader" class="loader">
+      <div class="loader__glass">
+        <div class="loader__sand"></div>
+      </div>
+      <p class="loader__text">Pouring the sand…</p>
+    </div>
+
+    <!-- HUD -->
+    <header class="hud-top">
+      <h1 class="title">SANDS&nbsp;OF&nbsp;TIME</h1>
+      <p class="subtitle">A digital twin of an hourglass · real grain physics</p>
+    </header>
+
+    <!-- Big countdown -->
+    <div id="countdown" class="countdown" aria-live="polite">
+      <span id="time-remaining" class="countdown__time">01:00</span>
+      <span id="time-status" class="countdown__status">Ready</span>
+    </div>
+
+    <!-- Control panel -->
+    <section class="panel" id="panel">
+      <div class="panel__group">
+        <span class="panel__label">Duration</span>
+        <div class="presets" id="presets">
+          <button class="chip" data-seconds="60">1 min</button>
+          <button class="chip" data-seconds="180">3 min</button>
+          <button class="chip" data-seconds="300">5 min</button>
+          <button class="chip" data-seconds="600">10 min</button>
+          <button class="chip" data-seconds="1800">30 min</button>
+          <button class="chip" data-seconds="3600">60 min</button>
+        </div>
+        <div class="custom">
+          <label class="custom__label" for="custom-min">Custom</label>
+          <input id="custom-min" class="custom__input" type="number" min="0" max="180" step="1" value="1" aria-label="Minutes" />
+          <span class="custom__unit">min</span>
+          <input id="custom-sec" class="custom__input" type="number" min="0" max="59" step="1" value="0" aria-label="Seconds" />
+          <span class="custom__unit">sec</span>
+          <button class="chip chip--apply" id="apply-custom">Set</button>
+        </div>
+      </div>
+
+      <div class="panel__controls">
+        <button class="btn btn--primary" id="btn-start">
+          <span class="btn__icon" aria-hidden="true">▶</span><span class="btn__label">Start</span>
+        </button>
+        <button class="btn" id="btn-pause" disabled>
+          <span class="btn__icon" aria-hidden="true">⏸</span><span class="btn__label">Pause</span>
+        </button>
+        <button class="btn" id="btn-flip" title="Flip the hourglass">
+          <span class="btn__icon" aria-hidden="true">⟲</span><span class="btn__label">Flip</span>
+        </button>
+        <button class="btn" id="btn-reset">
+          <span class="btn__icon" aria-hidden="true">↺</span><span class="btn__label">Reset</span>
+        </button>
+      </div>
+
+      <div class="panel__group panel__group--quality">
+        <span class="panel__label">Grain size</span>
+        <div class="presets" id="quality">
+          <button class="chip" data-grains="4200">Fine</button>
+          <button class="chip" data-grains="2800">Medium</button>
+          <button class="chip" data-grains="1600">Coarse</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="hint" id="hint">Drag to orbit · scroll to zoom</div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
