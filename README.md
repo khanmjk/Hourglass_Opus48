@@ -24,8 +24,8 @@ npm run build && npm run preview
 - **Duration** — 1 / 3 / 5 / 10 / 30 / 60 min presets, or a custom min : sec.
 - **Start / Pause / Reset** — transport. `Space` toggles, `R` resets, `F` flips.
 - **Flip** — tumble the glass; drained sand returns to the top, ready to run again.
-- **Sand detail** — Smooth / Balanced / Dense changes grain count (and therefore
-  fineness); the bulb always looks equally full.
+- **Grain size** — Fine / Medium / Coarse changes how many (and therefore how big)
+  the grains are; the bulb always looks equally full. Locked while a timer runs.
 - Drag to orbit, scroll to zoom.
 
 ## Tech
