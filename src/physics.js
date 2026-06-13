@@ -154,6 +154,8 @@ export function createSand(scene, THREE) {
       bodies[i] = body
     }
     buildInstanced()
+    syncAll() // render at the (packed) seed positions immediately — the live loop
+    //           then settles them over the next frames, so no blocking settle is needed
   }
 
   function buildInstanced() {
@@ -202,12 +204,14 @@ export function createSand(scene, THREE) {
     frozenList.push(i)
   }
 
-  // Pin any un-released grain that has sunk into the THROAT COLUMN -> maintains
-  // the plug. Only awake grains can move into the throat, so we skip sleeping/
-  // released/frozen ones (the cheap isSleeping() bool avoids a WASM object read).
-  function freezePass() {
+  const THROAT_COL_R2 = () => (DIM.neckRadius * 1.9) ** 2
+  // Pin any awake un-released grain that has sunk into the throat column -> keeps
+  // the plug fed. Plain loop (NOT forEachActiveRigidBody, which throws a Rapier
+  // "recursive use" borrow error when body methods are called inside it). The
+  // cheap isSleeping() bool skips the bulk of the sleeping pile.
+  function freezePlain() {
     const yHold = yHoldOffset()
-    const maxR2 = (DIM.neckRadius * 1.9) ** 2
+    const maxR2 = THROAT_COL_R2()
     for (let i = 0; i < N; i++) {
       if (released[i] || frozen[i] || bodies[i].isSleeping()) continue
       const t = bodies[i].translation()
@@ -277,7 +281,7 @@ export function createSand(scene, THREE) {
   // an emptied throat. We wake (a) the band just above the throat AND (b) a narrow
   // CENTRAL COLUMN up the full height — as the funnel drains, that column falls
   // and pulls in the outer grains by contact. Uses the JS caches (no WASM reads);
-  // the column is narrow so cost is bounded, and postStep re-sleeps settled grains.
+  // the column is narrow so cost is bounded, and the active pass re-sleeps them.
   function wakeFeedZone() {
     const yWake = DIM.throatHalf + rGrain * 9
     const colR2 = (DIM.neckRadius * 2.2) ** 2
@@ -290,7 +294,6 @@ export function createSand(scene, THREE) {
   let acc = 0
   function update(dt) {
     if (!instanced) return
-    freezePass()
     // fixed-step accumulator keeps physics real-time regardless of frame rate
     acc += Math.min(dt, 0.05)
     const h = 1 / 60
@@ -305,19 +308,27 @@ export function createSand(scene, THREE) {
     postStep()
   }
 
-  // ONE awake-only pass per frame: sleeping grains haven't moved, so we skip
-  // them entirely (no WASM object reads, no matrix rewrite). For each awake
-  // grain we rescue-if-escaped, force-sleep-if-settled, and sync its instance
-  // matrix. This collapses ~14k boundary calls/frame down to a few hundred.
+  // ONE O(N) pass per frame doing everything: skip sleeping grains (the cheap
+  // isSleeping() bool — no object read), and for each awake grain freeze it if
+  // it's an un-released plug grain, rescue it if it escaped, sleep it if it has
+  // settled, and sync its instance matrix. A single merged loop means one
+  // isSleeping() per grain (not two), and a plain loop avoids the forEach borrow
+  // trap, so we can mutate bodies inline.
   const SLEEP_SPEED2 = 0.0025 // (~0.05 u/s)²
   function postStep() {
+    const yHold = yHoldOffset()
+    const colR2 = THROAT_COL_R2()
     for (let i = 0; i < N; i++) {
       const b = bodies[i]
       if (frozen[i] || b.isSleeping()) continue
       let t = b.translation()
-      const rr = Math.hypot(t.x, t.z)
+      const rr2 = t.x * t.x + t.z * t.z
+      if (!released[i] && t.y < yHold && rr2 < colR2) {
+        setFrozen(i) // plug grain (also caches Y) — matrix already correct
+        continue
+      }
       const escaped =
-        t.y < -DIM.halfHeight - 0.02 || t.y > DIM.halfHeight + 0.02 || rr > interiorR(t.y) + rGrain * 3
+        t.y < -DIM.halfHeight - 0.02 || t.y > DIM.halfHeight + 0.02 || Math.sqrt(rr2) > interiorR(t.y) + rGrain * 3
       if (escaped) {
         rescue(i, b)
         t = b.translation()
@@ -376,7 +387,7 @@ export function createSand(scene, THREE) {
     const prev = world.timestep
     world.timestep = 1 / 120
     for (let s = 0; s < steps; s++) {
-      freezePass()
+      freezePlain()
       world.step()
     }
     world.timestep = prev
@@ -416,6 +427,7 @@ export function createSand(scene, THREE) {
       frozen[i] = false
       b.wakeUp()
     }
+    if (instanced) syncAll() // show the refilled pile at once; the loop settles it live
   }
 
   function setVisualRotationZ(rad) {

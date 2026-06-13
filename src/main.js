@@ -7,7 +7,7 @@ import { createTimer } from './timer.js'
 import { createUI } from './ui.js'
 
 const DEFAULT_SECONDS = 60
-const DEFAULT_GRAINS = 2800
+const DEFAULT_GRAINS = 2000
 
 async function boot() {
   // These are populated after Rapier initialises; the UI handlers below close
@@ -37,9 +37,10 @@ async function boot() {
     syncGrainAccess()
   }
 
+  // Re-seed the sand. No blocking settle — refill() renders the packed seed pile
+  // immediately and the animation loop settles it live (keeps the UI responsive).
   function resetSand() {
     sand.refill()
-    sand.settle(60)
   }
 
   const handlers = {
@@ -52,8 +53,7 @@ async function boot() {
     onSetGrains(count) {
       if (!sand || !canChangeGrains()) return // ignored while a drain is in progress
       grains = count
-      sand.build(count)
-      sand.settle(120)
+      sand.build(count) // builds + renders the seed pile; the loop settles it live
       timer.reset()
       refreshIdle()
     },
