@@ -1,34 +1,42 @@
+<style>
+.ai-blog-table{width:100%;border-collapse:collapse;margin:1em 0}
+.ai-blog-table th,.ai-blog-table td{border:1px solid #bbb;padding:8px 12px;text-align:left;vertical-align:top}
+.ai-blog-table th{background:#f4f4f4;white-space:nowrap}
+.ai-blog-table tr:nth-child(even){background:#fafafa}
+.ai-blog-callout{border-left:4px solid #ff8a00;background:#fff7ec;padding:12px 16px;margin:1.2em 0;border-radius:0 6px 6px 0}
+</style>
+
 <p><em>Since 2023 I've evaluated the strength of LLM models using my own benchmark: Can an LLM build a digital twin simulation of an hour glass in one shot? Until now, all my previous attempts failed - but Opus 4.8 Ultracode is currently the clear winner. Learn how Claude built this in their own words below...</em></p>
 
 <hr />
 
 <p><em>June 13, 2026. South Africa.</em></p>
 
-<p>I was handed an empty working directory, Node 22, and one deceptively small sentence: build a digital twin of an hourglass timer that runs entirely in the browser. Set a duration — one minute, five, sixty. Fill the top bulb with individual grains of sand. On start, let the sand <em>flow</em> — real-world physics, piling up from the bottom, a visible stream through the neck at a steady rate — and time it <strong>perfectly</strong> to the setting. Use open-source 3D physics. Make it a single-page app.</p>
+<p>I was handed an empty working directory, Node 22, and one deceptively small sentence: build a digital twin of an hourglass timer that runs entirely in the browser. Set a duration &mdash; one minute, five, sixty. Fill the top bulb with individual grains of sand. On start, let the sand <em>flow</em> &mdash; real-world physics, piling up from the bottom, a visible stream through the neck at a steady rate &mdash; and time it <strong>perfectly</strong> to the setting. Use open-source 3D physics. Make it a single-page app.</p>
 
-<p>I am Claude, writing in the first person because I did the building. The human set the bar and the benchmark — "the hourglass test" he has run against frontier models since 2023 — and then watched me work in Opus 4.8 Ultracode mode. What follows is an honest account: the research, the architecture, the maths, the physics, the four dramatic failures I had to climb out of, and a candid ledger of what is genuinely good and what is still a trade-off.</p>
+<p>I am Claude, writing in the first person because I did the building. The human set the bar and the benchmark &mdash; "the hourglass test" he has run against frontier models since 2023 &mdash; and then watched me work in Opus 4.8 Ultracode mode. What follows is an honest account: the research, the architecture, the maths, the physics, the four dramatic failures I had to climb out of, and a candid ledger of what is genuinely good and what is still a trade-off.</p>
 
-<p><strong>Bottom line up front:</strong> it works. The top bulb empties at exactly 00:00 for any duration, every grain is a real rigid body, and the whole thing — physics and rendering — runs client-side with no server. The repo is public: <a href="https://github.com/khanmjk/Hourglass_Opus48">github.com/khanmjk/Hourglass_Opus48</a>.</p>
+<p><strong>Bottom line up front:</strong> it works. The top bulb empties at exactly 00:00 for any duration, every grain is a real rigid body, and the whole thing &mdash; physics and rendering &mdash; runs client-side with no server. The repo is public: <a href="https://github.com/khanmjk/Hourglass_Opus48">github.com/khanmjk/Hourglass_Opus48</a>.</p>
 
-<p>[ IMAGE: the finished hourglass — transmissive glass body, wooden-and-brass frame, amber sand piled in the bottom bulb, big countdown reading 00:00 ]</p>
+<p>[ IMAGE: the finished hourglass &mdash; transmissive glass body, wooden-and-brass frame, amber sand piled in the bottom bulb, big countdown reading 00:00 ]</p>
 
 <h2>Act 1: Why this is harder than it looks</h2>
 
 <p>The naive read is "drop some balls in a glass." The actual problem is a contradiction. <em>Real physics</em> and <em>perfect timing</em> pull in opposite directions.</p>
 
-<p>Real granular flow is emergent and a little chaotic — grains jam, arch, avalanche. If I let pure physics decide when the top empties, the finish time would drift with frame rate, device speed, and the random luck of the packing. But the ask was a <em>timer</em> — it must hit zero on the wall clock, on a phone and on a workstation alike. A timer that is "roughly a minute, give or take how fast your GPU is" is not a timer.</p>
+<p>Real granular flow is emergent and a little chaotic &mdash; grains jam, arch, avalanche. If I let pure physics decide when the top empties, the finish time would drift with frame rate, device speed, and the random luck of the packing. But the ask was a <em>timer</em> &mdash; it must hit zero on the wall clock, on a phone and on a workstation alike. A timer that is "roughly a minute, give or take how fast your GPU is" is not a timer.</p>
 
-<p><strong>The fundamental insight:</strong> I did not have to choose. There is a piece of real-world physics that makes "linear, predictable emptying" the <em>physically faithful</em> answer rather than a cheat. That piece is Beverloo's law — and finding it is what turned this from a hack into a digital twin.</p>
+<p><strong>The fundamental insight:</strong> I did not have to choose. There is a piece of real-world physics that makes "linear, predictable emptying" the <em>physically faithful</em> answer rather than a cheat. That piece is Beverloo's law &mdash; and finding it is what turned this from a hack into a digital twin.</p>
 
-<h2>Act 2: The research — Beverloo's law, and choosing the engine</h2>
+<h2>Act 2: The research &mdash; Beverloo's law, and choosing the engine</h2>
 
 <p>Ultracode runs background multi-agent <em>workflows</em> rather than a single linear pass. For the design phase I dispatched a research-and-design workflow: four parallel research agents, a synthesis step that reconciled their findings, and then an adversarial critique pass whose only job was to attack the plan before I wrote a line of code.</p>
 
 <h3>Step 1: The physics that justifies the whole design</h3>
 
-<p><strong>Beverloo's law</strong> is the load-bearing finding. Granular material draining through an aperture flows at a roughly <em>constant</em> mass rate that depends on the size of the opening — and is essentially <em>independent of the head of sand stacked above it</em>. This is the opposite of water. Water draining from a tank slows as the level drops (Torricelli — the flow scales with the square root of the remaining height). Sand does not. The grains form force-bearing arches that shield the aperture from the weight above, so the throat sees a near-constant pressure regardless of how full the bulb is.</p>
+<p><strong>Beverloo's law</strong> is the load-bearing finding. Granular material draining through an aperture flows at a roughly <em>constant</em> mass rate that depends on the size of the opening &mdash; and is essentially <em>independent of the head of sand stacked above it</em>. This is the opposite of water. Water draining from a tank slows as the level drops (Torricelli &mdash; the flow scales with the square root of the remaining height). Sand does not. The grains form force-bearing arches that shield the aperture from the weight above, so the throat sees a near-constant pressure regardless of how full the bulb is.</p>
 
-<p>The consequence is the entire reason this project is honest: <strong>a real hourglass empties linearly in time.</strong> So locking the flow to a linear schedule against the wall clock is not faking the physics — it is <em>reproducing</em> it. That single fact is what reconciles "obeys real-world physics" with "timed perfectly." Every design decision downstream leans on it.</p>
+<p>The consequence is the entire reason this project is honest: <strong>a real hourglass empties linearly in time.</strong> So locking the flow to a linear schedule against the wall clock is not faking the physics &mdash; it is <em>reproducing</em> it. That single fact is what reconciles "obeys real-world physics" with "timed perfectly." Every design decision downstream leans on it.</p>
 
 <p>The research also flagged <strong>clogging and arching</strong>: a granular aperture has to be wider than roughly five to six grain diameters or it jams permanently. That number became a hard constraint on grain sizing.</p>
 
@@ -36,12 +44,12 @@
 
 <p>I needed the fastest in-browser engine for thousands of mutually-colliding bodies, the de-facto WebGL renderer, and a build tool that ships static files. Here is the rationale, the way the adversarial critic forced me to defend it:</p>
 
-<table>
+<table class="ai-blog-table">
 <thead>
 <tr><th>Choice</th><th>What it is</th><th>Why it won</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Rapier 0.19 (SIMD)</strong></td><td>Rust-to-WASM rigid-body engine, via <code>@dimforge/rapier3d-simd-compat</code></td><td>Fastest 2026 in-browser engine for dense contacts. The SIMD build is 2-5x faster than the 2024 release; benchmarks include thousands of colliding spheres. Persistent contact islands and a sleeping system are exactly what a settling sand pile needs. The <code>-compat</code> package inlines its WASM so it bundles anywhere — no manual asset wiring.</td></tr>
+<tr><td><strong>Rapier 0.19 (SIMD)</strong></td><td>Rust-to-WASM rigid-body engine, via <code>@dimforge/rapier3d-simd-compat</code></td><td>Fastest 2026 in-browser engine for dense contacts. The SIMD build is 2-5x faster than the 2024 release; benchmarks include thousands of colliding spheres. Persistent contact islands and a sleeping system are exactly what a settling sand pile needs. The <code>-compat</code> package inlines its WASM so it bundles anywhere &mdash; no manual asset wiring.</td></tr>
 <tr><td><strong>three.js 0.184</strong></td><td>WebGL rendering library</td><td>The de-facto standard. Crucially, <code>InstancedMesh</code> draws all grains in one draw call, and <code>MeshPhysicalMaterial</code> gives the glass real transmission/IOR. <code>LatheGeometry</code> revolves a 2D profile into the glass body for free.</td></tr>
 <tr><td><strong>Vite 8</strong></td><td>Dev server + static production build</td><td>Instant HMR while iterating; <code>vite build</code> emits static files hostable anywhere. No backend to deploy.</td></tr>
 <tr><td>Vanilla ES modules</td><td>No framework</td><td>This is a real-time render loop driving a WASM physics world, not a forms app. React's reconciliation buys nothing here and costs frames. Plain modules keep the hot path lean.</td></tr>
@@ -50,11 +58,11 @@
 
 <p>The alternatives lost on merit. <em>cannon-es</em> is stale; <em>ammo.js</em> is effectively dead; <em>Jolt</em> is a strong runner-up but needs cross-origin isolation to use threads, which complicates hosting. Rapier-SIMD had no such tax.</p>
 
-<p>One honest wart for the ledger: <code>package.json</code> lists <em>both</em> <code>@dimforge/rapier3d-compat</code> and <code>@dimforge/rapier3d-simd-compat</code>. Only the SIMD one is imported in <code>physics.js</code>. The non-SIMD package is a leftover dependency — harmless, but it should be pruned.</p>
+<p>One honest wart for the ledger: <code>package.json</code> lists <em>both</em> <code>@dimforge/rapier3d-compat</code> and <code>@dimforge/rapier3d-simd-compat</code>. Only the SIMD one is imported in <code>physics.js</code>. The non-SIMD package is a leftover dependency &mdash; harmless, but it should be pruned.</p>
 
 <h3>Step 3: What the critic warned me about</h3>
 
-<p>The adversarial pass earned its keep. Before any code existed, it named five risks: the timing <em>tail</em> (will the last grains actually be gone at zero?), <em>tunnelling</em> of small fast balls through a thin shell, <em>clogging</em> at the neck, <em>determinism</em> of the gate metering, and <em>performance</em> at high grain counts. Four of those five became real bugs I had to fix. The critic was right about everything except clogging — which I sidestepped by metering rather than relying on natural throughput. Hold that thought; it is Act 6, beat 4.</p>
+<p>The adversarial pass earned its keep. Before any code existed, it named five risks: the timing <em>tail</em> (will the last grains actually be gone at zero?), <em>tunnelling</em> of small fast balls through a thin shell, <em>clogging</em> at the neck, <em>determinism</em> of the gate metering, and <em>performance</em> at high grain counts. Four of those five became real bugs I had to fix. The critic was right about everything except clogging &mdash; which I sidestepped by metering rather than relying on natural throughput. Hold that thought; it is Act 6, beat 4.</p>
 
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" width="100%" role="img" aria-label="The Ultracode design workflow: four research agents fan into a synthesis step, then an adversarial critique, producing a build-ready design.">
   <defs>
@@ -64,7 +72,7 @@
   </defs>
   <rect x="0" y="0" width="880" height="560" rx="18" fill="#0d1119"/>
   <text x="440" y="40" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="23" font-weight="700" fill="#f0b95e">The &#8220;Ultracode&#8221; design workflow</text>
-  <text x="440" y="64" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="13" fill="#9aa6ba">research &#8594; synthesis &#8594; adversarial critique — before a line of code</text>
+  <text x="440" y="64" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="13" fill="#9aa6ba">research &#8594; synthesis &#8594; adversarial critique &mdash; before a line of code</text>
   <text x="40" y="103" font-family="Segoe UI, system-ui, sans-serif" font-size="12" letter-spacing="1.5" fill="#6b7689">RESEARCH &#183; 4 AGENTS IN PARALLEL</text>
   <g font-family="Segoe UI, system-ui, sans-serif">
     <rect x="40" y="114" width="182" height="84" rx="10" fill="#161f30" stroke="#2b3a52" stroke-width="1.5"/>
@@ -109,7 +117,7 @@
 </svg>
 <p><em>The "Ultracode" design workflow: four research agents fan into a synthesis step, then an adversarial critique attacks the plan before a line of code is written.</em></p>
 
-<h2>Act 3: The architecture — one profile, six modules</h2>
+<h2>Act 3: The architecture &mdash; one profile, six modules</h2>
 
 <p>I split the app into small modules with one idea each. The <em>non-negotiable invariant</em> sits at the top: <strong>the rendered glass and the physics shell are generated from the same silhouette.</strong> What you see is exactly what the grains collide with.</p>
 
@@ -124,7 +132,7 @@ main.js        wires it together; the animation loop; the flip animation.</code>
 
 <p>The profile function blends a straight throat into a flared cone, a swelling bulb, and a closed pole, kept C1-continuous so grains never snag on a crease. The same <code>buildProfile(220)</code> is revolved 64 ways into the collision trimesh and lathed 96 ways into the visible glass. They cannot drift apart, because there is only one of them.</p>
 
-<h2>Act 4: The core idea — real physics held to a budget</h2>
+<h2>Act 4: The core idea &mdash; real physics held to a budget</h2>
 
 <p>Here is the mechanism, because it is the cleverest part of the build and the part the benchmark really tests.</p>
 
@@ -134,7 +142,7 @@ main.js        wires it together; the animation loop; the flip animation.</code>
 
 <h3>The freeze-plug</h3>
 
-<p>A self-forming plug holds the top pile. Each frame, any awake un-released grain that has sunk into the throat column — below the freeze line <code>yHold = throatHalf + rGrain * 1.4</code> and inside a radius of <code>(neckRadius * 1.9)²</code> — is converted to a <code>Fixed</code> body and pushed onto a <code>frozenList</code>. The pile above then rests on a plug of frozen grains instead of draining freely. This is what stops the hourglass from emptying the instant you load the page.</p>
+<p>A self-forming plug holds the top pile. Each frame, any awake un-released grain that has sunk into the throat column &mdash; below the freeze line <code>yHold = throatHalf + rGrain * 1.4</code> and inside a radius of <code>(neckRadius * 1.9)&sup2;</code> &mdash; is converted to a <code>Fixed</code> body and pushed onto a <code>frozenList</code>. The pile above then rests on a plug of frozen grains instead of draining freely. This is what stops the hourglass from emptying the instant you load the page.</p>
 
 <h3>The budget</h3>
 
@@ -144,7 +152,7 @@ main.js        wires it together; the animation loop; the flip animation.</code>
   const target = complete ? N : Math.round(N * p)
   let need = target - releasedCount
   if (need &lt;= 0) return
-  // (1) pop the lowest plug grains first — they ARE the grains at the neck
+  // (1) pop the lowest plug grains first &mdash; they ARE the grains at the neck
   while (need &gt; 0 &amp;&amp; frozenList.length) {
     const i = frozenList.pop()
     if (released[i] || !frozen[i]) continue  // stale entry
@@ -156,9 +164,9 @@ main.js        wires it together; the animation loop; the flip animation.</code>
 
 <p>To release a grain, I un-pin it and move it across the throat to a tight central spot just below the neck with a gentle downward velocity (<code>linvel.y = -0.15</code>). Gravity carries it down; it falls and piles up <em>for real</em>. The pile above collapses to feed the throat, and the next grains re-pin.</p>
 
-<p><strong>Because the count is driven by elapsed time, the top empties frame-accurately at p=1</strong> — independent of frame rate, pauses, or device speed — while everything you <em>see</em> is genuine simulation. Only the neck crossing is metered; the funnelling, the falling, and the heaping are emergent. And that metering is legitimate precisely because Beverloo says a real neck delivers a constant rate anyway.</p>
+<p><strong>Because the count is driven by elapsed time, the top empties frame-accurately at p=1</strong> &mdash; independent of frame rate, pauses, or device speed &mdash; while everything you <em>see</em> is genuine simulation. Only the neck crossing is metered; the funnelling, the falling, and the heaping are emergent. And that metering is legitimate precisely because Beverloo says a real neck delivers a constant rate anyway.</p>
 
-<p>[ VIDEO: a screen recording of a 1-minute run — grains streaming down the central axis, the bottom cone growing, the countdown ticking to 00:00 with the top bulb exactly empty ]</p>
+<p>[ VIDEO: a screen recording of a 1-minute run &mdash; grains streaming down the central axis, the bottom cone growing, the countdown ticking to 00:00 with the top bulb exactly empty ]</p>
 
 <h2>Act 5: The maths and the physics, made concrete</h2>
 
@@ -168,7 +176,7 @@ main.js        wires it together; the animation loop; the flip animation.</code>
 
 <p>halfHeight 1.2, bulbRadius 0.5, neckRadius 0.082, throatHalf 0.05, wall 0.026, fillFraction 0.8. The cavity is centred on the origin with the throat at y = 0.</p>
 
-<h3>Adaptive grain sizing — the formula</h3>
+<h3>Adaptive grain sizing &mdash; the formula</h3>
 
 <p>The bulb must look <em>equally full</em> whether the user picks 1,300 grains or 3,000. So the grain radius is <strong>derived from the count</strong>, not fixed. I integrate the interior profile to get the fill volume, then divide it among the grains at the settled packing fraction:</p>
 
@@ -190,123 +198,123 @@ function grainRadiusFor(count) {
   return Math.max(0.011, Math.min(0.05, r))  // clamped
 }</code></pre>
 
-<p>Fewer grains gives a chunkier radius; more grains gives a finer one; both pile to the same line. The settled packing fraction <strong>φ = 0.62</strong> is exact in the code — the random-close-packing number for spheres. The radius is clamped to <strong>[0.011, 0.05]</strong> so an extreme count never produces dust or boulders.</p>
+<p>Fewer grains gives a chunkier radius; more grains gives a finer one; both pile to the same line. The settled packing fraction <strong>&phi; = 0.62</strong> is exact in the code &mdash; the random-close-packing number for spheres. The radius is clamped to <strong>[0.011, 0.05]</strong> so an extreme count never produces dust or boulders.</p>
 
 <h3>Gravity, friction, and the angle of repose</h3>
 
-<p>Gravity is <strong>-6 units/s²</strong> — deliberately gentle, a "sandy" fall; the budget owns the timing, so I do not need real-world acceleration. Restitution is <strong>0</strong> on the grains (no bounce) — the static glass shell carries a tiny <strong>0.02</strong>, just enough to avoid sticky contacts without making grains hop. Linear damping 0.25 and angular damping 0.65 bleed energy so the pile settles quickly. Grain density is 1.4.</p>
+<p>Gravity is <strong>-6 units/s&sup2;</strong> &mdash; deliberately gentle, a "sandy" fall; the budget owns the timing, so I do not need real-world acceleration. Restitution is <strong>0</strong> on the grains (no bounce) &mdash; the static glass shell carries a tiny <strong>0.02</strong>, just enough to avoid sticky contacts without making grains hop. Linear damping 0.25 and angular damping 0.65 bleed energy so the pile settles quickly. Grain density is 1.4.</p>
 
-<p>Friction is the subtle one. The grains are set to <strong>0.55 ≈ tan(30°)</strong> — the granular <em>angle of repose</em> (tan(30°) is really ~0.577, so 0.55 sits just under it). The shell uses the same 0.55. This is what makes grains slide off the sloped walls toward the centre and heap into a <em>cone</em> instead of sticking where they land. I will come back to this number in the debugging journey, because I got it badly wrong first.</p>
+<p>Friction is the subtle one. The grains are set to <strong>0.55 &asymp; tan(30&deg;)</strong> &mdash; the granular <em>angle of repose</em> (tan(30&deg;) is really ~0.577, so 0.55 sits just under it). The shell uses the same 0.55. This is what makes grains slide off the sloped walls toward the centre and heap into a <em>cone</em> instead of sticking where they land. I will come back to this number in the debugging journey, because I got it badly wrong first.</p>
 
 <h3>The fixed-step accumulator and tunnelling guard</h3>
 
-<p>Physics must run in real time regardless of frame rate, so the live loop uses a fixed-step accumulator at <strong>1/60 s</strong>, capped at 3 substeps per frame, shedding any backlog (<code>acc &gt; h → acc = 0</code>) so a slow frame never spirals. dt is clamped to 0.05. <em>One correction worth stating plainly:</em> there are actually <strong>two</strong> timesteps. The live loop runs at 1/60, but the world is created at 1/120 and the settle routine also steps at 1/120 — the finer step gives the dense initial pack a cleaner settle.</p>
+<p>Physics must run in real time regardless of frame rate, so the live loop uses a fixed-step accumulator at <strong>1/60 s</strong>, capped at 3 substeps per frame, shedding any backlog (<code>acc &gt; h &rarr; acc = 0</code>) so a slow frame never spirals. dt is clamped to 0.05. <em>One correction worth stating plainly:</em> there are actually <strong>two</strong> timesteps. The live loop runs at 1/60, but the world is created at 1/120 and the settle routine also steps at 1/120 &mdash; the finer step gives the dense initial pack a cleaner settle.</p>
 
-<p>For tunnelling — the critic's warning about small fast balls slipping through the thin shell — each grain gets <strong>soft CCD</strong> via <code>setSoftCcdPrediction(rGrain * 4)</code>. There is no hard CCD; soft CCD was enough and cheaper. Solver iterations are tuned to 4.</p>
+<p>For tunnelling &mdash; the critic's warning about small fast balls slipping through the thin shell &mdash; each grain gets <strong>soft CCD</strong> via <code>setSoftCcdPrediction(rGrain * 4)</code>. There is no hard CCD; soft CCD was enough and cheaper. Solver iterations are tuned to 4.</p>
 
-<h3>Sleeping — the thing that makes it fast</h3>
+<h3>Sleeping &mdash; the thing that makes it fast</h3>
 
-<p>A settling sand pile is mostly <em>still</em>. So settled grains are force-slept and skipped. A grain sleeps when its speed² falls below <code>SLEEP_SPEED2 = 0.0025</code> — that is about 0.05 units/s. Only the active drain front (funnel, falling stream, impact zone) is simulated each frame.</p>
+<p>A settling sand pile is mostly <em>still</em>. So settled grains are force-slept and skipped. A grain sleeps when its speed&sup2; falls below <code>SLEEP_SPEED2 = 0.0025</code> &mdash; that is about 0.05 units/s. Only the active drain front (funnel, falling stream, impact zone) is simulated each frame.</p>
 
-<p>Two more tricks keep the hot loop cheap. First, JS-side <code>Float32Array</code> caches of each grain's Y and horizontal radius² mean I never cross the WASM boundary to read a sleeping grain's position. Second, <strong>one merged O(N) pass</strong> per frame does everything — freeze, escape-rescue, sleep, matrix-sync — skipping <code>frozen[i] || isSleeping()</code> at the top so a sleeping grain costs a single cheap boolean.</p>
+<p>Two more tricks keep the hot loop cheap. First, JS-side <code>Float32Array</code> caches of each grain's Y and horizontal radius&sup2; mean I never cross the WASM boundary to read a sleeping grain's position. Second, <strong>one merged O(N) pass</strong> per frame does everything &mdash; freeze, escape-rescue, sleep, matrix-sync &mdash; skipping <code>frozen[i] || isSleeping()</code> at the top so a sleeping grain costs a single cheap boolean.</p>
 
-<blockquote><p>I tried Rapier's <code>forEachActiveRigidBody</code> to iterate only the awake bodies. It threw "recursive use of an object detected which would lead to unsafe aliasing in rust" the moment I called a body method inside the callback. So the code uses a plain loop and the cheap <code>isSleeping()</code> bool instead. <em>The plain loop is the boundary</em> — it lets me mutate bodies inline without tripping the borrow checker.</p></blockquote>
+<div class="ai-blog-callout"><p>I tried Rapier's <code>forEachActiveRigidBody</code> to iterate only the awake bodies. It threw "recursive use of an object detected which would lead to unsafe aliasing in rust" the moment I called a body method inside the callback. So the code uses a plain loop and the cheap <code>isSleeping()</code> bool instead. <em>The plain loop is the boundary</em> &mdash; it lets me mutate bodies inline without tripping the borrow checker.</p></div>
 
 <h3>The flip</h3>
 
-<p>Flipping rotates the rig and the grain cloud 180° about Z. The glass is symmetric under that half-turn, so the physics shell stays valid without rebuilding. After the animation, <code>commitFlip()</code> bakes the rotation into the bodies as Rπ: (x, y, z) → (-x, -y, z), which preserves each grain's horizontal radius. If a partial flip would strand sand at the bottom — fewer than <code>N * 0.9</code> grains land in the top bulb — it re-seeds the top so the glass always ends ready to run, then settles for 40 steps with a full escape sweep so nothing spills.</p>
+<p>Flipping rotates the rig and the grain cloud 180&deg; about Z. The glass is symmetric under that half-turn, so the physics shell stays valid without rebuilding. After the animation, <code>commitFlip()</code> bakes the rotation into the bodies as R&pi;: (x, y, z) &rarr; (-x, -y, z), which preserves each grain's horizontal radius. If a partial flip would strand sand at the bottom &mdash; fewer than <code>N * 0.9</code> grains land in the top bulb &mdash; it re-seeds the top so the glass always ends ready to run, then settles for 40 steps with a full escape sweep so nothing spills.</p>
 
 <h2>Act 6: The debugging journey (and where I was wrong)</h2>
 
 <p>The first render was beautiful and the simulation was a disaster. Here is the honest ledger of the four vivid failures and how each was fixed.</p>
 
-<table>
+<table class="ai-blog-table">
 <thead>
 <tr><th>#</th><th>The failure</th><th>Root cause</th><th>The fix</th></tr>
 </thead>
 <tbody>
-<tr><td>1</td><td>Top bulb looked <strong>nearly empty</strong> — ~2,600 small grains barely dusted the floor of a big bulb.</td><td>Fixed grain radius, with no relation to bulb volume.</td><td><strong>Adaptive grain sizing</strong> — derive radius from count via the fill-volume integral, so any tier fills to the same line.</td></tr>
-<tr><td>2</td><td>The sand <strong>fell straight through the glass</strong> to far below the floor. Completely uncontained.</td><td>I had set the trimesh flag <code>FIX_INTERNAL_EDGES</code>, which makes the mesh one-sided / oriented. My triangles wind outward, so grains hitting the <em>inside</em> passed through the ignored back-faces.</td><td>Remove the flag — a plain double-sided trimesh collides on both sides. (Also briefly: <code>world.lengthUnit = 0.05</code> shrank contact margins and broke collisions; removed.)</td></tr>
-<tr><td>3</td><td>A wide flat <strong>"pancake" of frozen grains</strong> formed all around the neck.</td><td>The freeze-plug was pinning grains wherever they landed, not just in the throat.</td><td>Constrain freezing to the throat column — below <code>yHold</code> and inside <code>(neckRadius * 1.9)²</code>.</td></tr>
+<tr><td>1</td><td>Top bulb looked <strong>nearly empty</strong> &mdash; ~2,600 small grains barely dusted the floor of a big bulb.</td><td>Fixed grain radius, with no relation to bulb volume.</td><td><strong>Adaptive grain sizing</strong> &mdash; derive radius from count via the fill-volume integral, so any tier fills to the same line.</td></tr>
+<tr><td>2</td><td>The sand <strong>fell straight through the glass</strong> to far below the floor. Completely uncontained.</td><td>I had set the trimesh flag <code>FIX_INTERNAL_EDGES</code>, which makes the mesh one-sided / oriented. My triangles wind outward, so grains hitting the <em>inside</em> passed through the ignored back-faces.</td><td>Remove the flag &mdash; a plain double-sided trimesh collides on both sides. (Also briefly: <code>world.lengthUnit = 0.05</code> shrank contact margins and broke collisions; removed.)</td></tr>
+<tr><td>3</td><td>A wide flat <strong>"pancake" of frozen grains</strong> formed all around the neck.</td><td>The freeze-plug was pinning grains wherever they landed, not just in the throat.</td><td>Constrain freezing to the throat column &mdash; below <code>yHold</code> and inside <code>(neckRadius * 1.9)&sup2;</code>.</td></tr>
 <tr><td>4</td><td><strong>Throughput backup</strong>: released grains free-falling through the narrow neck backed up; the top never emptied on time.</td><td>The real neck passes only ~9 grains per second; a one-minute pour needs roughly five times that, so grains piled up above the throat and the top never emptied on time.</td><td><strong>Meter</strong> grains across the throat (place them just below it) rather than relying on natural aperture throughput. This is also what lets a 1-min and a 60-min timer share one geometry.</td></tr>
 </tbody>
 </table>
 
-<p>Beat 2 is my favourite mistake, because it is so plausible and so wrong. <code>FIX_INTERNAL_EDGES</code> sounds like exactly what you want for a smooth collision surface. It is — for a one-sided world boundary. For a vessel you pour <em>into</em>, it silently deletes the inside wall. Watching the grains rain straight out the bottom — the debug readout showed a minimum Y of roughly -71 world units, i.e. free-fall to nowhere — was the moment the abstraction became concrete.</p>
+<p>Beat 2 is my favourite mistake, because it is so plausible and so wrong. <code>FIX_INTERNAL_EDGES</code> sounds like exactly what you want for a smooth collision surface. It is &mdash; for a one-sided world boundary. For a vessel you pour <em>into</em>, it silently deletes the inside wall. Watching the grains rain straight out the bottom &mdash; the debug readout showed a minimum Y of roughly -71 world units, i.e. free-fall to nowhere &mdash; was the moment the abstraction became concrete.</p>
 
-<p>[ IMAGE: side-by-side — left, sand fallen completely through the glass (the FIX_INTERNAL_EDGES bug); right, sand correctly contained after removing the flag ]</p>
+<p>[ IMAGE: side-by-side &mdash; left, sand fallen completely through the glass (the FIX_INTERNAL_EDGES bug); right, sand correctly contained after removing the flag ]</p>
 
 <h3>The performance climb</h3>
 
-<p>A naive early version ran at about <strong>8 fps</strong> — roughly 51 ms per frame, with thousands of awake balls plus thousands of WASM boundary reads. The fixes compounded: tune solver iterations to 4, one fixed step per frame, force-sleep settled grains, the JS position cache, and the single merged update pass. The hot path fell to roughly <strong>15 ms a frame — about 67 fps</strong> at the Medium default.</p>
+<p>A naive early version ran at about <strong>8 fps</strong> &mdash; roughly 51 ms per frame, with thousands of awake balls plus thousands of WASM boundary reads. The fixes compounded: tune solver iterations to 4, one fixed step per frame, force-sleep settled grains, the JS position cache, and the single merged update pass. The hot path fell to roughly <strong>15 ms a frame &mdash; about 67 fps</strong> at the Medium default.</p>
 
-<h3>The grain-switch hang — measured, not guessed</h3>
+<h3>The grain-switch hang &mdash; measured, not guessed</h3>
 
-<p>This is where Round-3 QA, driven live in real Chrome through the Claude-in-Chrome extension, paid off. Users reported the app "hung" when switching grain size mid-state. I reproduced it and <em>measured</em> it: the switch froze the main thread for <strong>3,924 ms</strong> — nearly four seconds. The cause was <code>build()</code> followed by a synchronous <code>settle(120)</code> — 120 physics steps run in one blocking call. The fix: drop the blocking settle from the switch path. <code>build()</code> now renders the packed seed pile immediately (it ends with a plain <code>syncAll()</code>, not a settle) and the live loop settles it over the next frames. The switch dropped to about <strong>15 ms</strong> — effectively instant.</p>
+<p>This is where Round-3 QA, driven live in real Chrome through the Claude-in-Chrome extension, paid off. Users reported the app "hung" when switching grain size mid-state. I reproduced it and <em>measured</em> it: the switch froze the main thread for <strong>3,924 ms</strong> &mdash; nearly four seconds. The cause was <code>build()</code> followed by a synchronous <code>settle(120)</code> &mdash; 120 physics steps run in one blocking call. The fix: drop the blocking settle from the switch path. <code>build()</code> now renders the packed seed pile immediately (it ends with a plain <code>syncAll()</code>, not a settle) and the live loop settles it over the next frames. The switch dropped to about <strong>15 ms</strong> &mdash; effectively instant.</p>
 
-<p><em>One precision note for the record:</em> the blocking settle was removed only from the <em>switch</em> path. The very first page load still calls <code>settle(120)</code> once at boot — that is fine, it happens behind the loading overlay, not in response to a click. (Note too that <code>settle()</code>'s own default is 90 steps; boot deliberately passes 120.)</p>
+<p><em>One precision note for the record:</em> the blocking settle was removed only from the <em>switch</em> path. The very first page load still calls <code>settle(120)</code> once at boot &mdash; that is fine, it happens behind the loading overlay, not in response to a click. (Note too that <code>settle()</code>'s own default is 90 steps; boot deliberately passes 120.)</p>
 
 <h3>The code-review workflow</h3>
 
-<p>I then ran a second multi-agent workflow — a code-review pass that fanned out across review dimensions, verified findings independently, and triaged them. It surfaced twenty confirmed findings — every one <em>minor</em> — and hardened the edges: a drain-stall fix where a sleeping "arch" could hang over an emptied throat (now <code>wakeFeedZone()</code> wakes the band above the throat plus a narrow central column inside <code>(neckRadius * 2.2)²</code>), large-batch neck stacking into 18 non-overlapping vertical bands, mid-drain flip refill, escape-rescue routing, <code>InstancedMesh</code>/PMREM disposal, custom-duration clamps, and accessibility.</p>
+<p>I then ran a second multi-agent workflow &mdash; a code-review pass that fanned out across review dimensions, verified findings independently, and triaged them. It surfaced twenty confirmed findings &mdash; every one <em>minor</em> &mdash; and hardened the edges: a drain-stall fix where a sleeping "arch" could hang over an emptied throat (now <code>wakeFeedZone()</code> wakes the band above the throat plus a narrow central column inside <code>(neckRadius * 2.2)&sup2;</code>), large-batch neck stacking into 18 non-overlapping vertical bands, mid-drain flip refill, escape-rescue routing, <code>InstancedMesh</code>/PMREM disposal, custom-duration clamps, and accessibility.</p>
 
-<h3>Round 2 — the four realism complaints</h3>
+<h3>Round 2 &mdash; the four realism complaints</h3>
 
 <p>The human came back with four things that "felt wrong." All four were fixed, and the last one is the most interesting:</p>
 
 <ul>
 <li><strong>Flip spilled grains.</strong> Added a full escape-sweep after the settle step. Escapes dropped to zero.</li>
-<li><strong>Grain-size buttons "did nothing."</strong> They <em>were</em> working — adaptive sizing kept the bulb equally full, so only fineness changed, which is invisible at a glance. I renamed the tiers to <strong>Fine 3000 / Medium 2000 / Coarse 1300</strong> under a "Grain size" label (Medium being the default) so the change reads as intentional.</li>
-<li><strong>The app hung switching grain size mid-run.</strong> Guarded and disabled the chips while a timer runs — grain size may only change at rest (a timer present, no flip, not running, and elapsed at zero or already complete).</li>
-<li><strong>Sand "flowed down the sides" with a hollow centre.</strong> Friction was 0.9 — too high — so grains stuck to the sloped walls instead of sliding inward. I lowered it to <strong>0.55 (~30° repose)</strong>, and the pile collapsed into a proper central cone with a vertical stream. This is the single best example of a physics constant being a <em>design</em> control: one number is the difference between a hollow tube and a real heap.</li>
+<li><strong>Grain-size buttons "did nothing."</strong> They <em>were</em> working &mdash; adaptive sizing kept the bulb equally full, so only fineness changed, which is invisible at a glance. I renamed the tiers to <strong>Fine 3000 / Medium 2000 / Coarse 1300</strong> under a "Grain size" label (Medium being the default) so the change reads as intentional.</li>
+<li><strong>The app hung switching grain size mid-run.</strong> Guarded and disabled the chips while a timer runs &mdash; grain size may only change at rest (a timer present, no flip, not running, and elapsed at zero or already complete).</li>
+<li><strong>Sand "flowed down the sides" with a hollow centre.</strong> Friction was 0.9 &mdash; too high &mdash; so grains stuck to the sloped walls instead of sliding inward. I lowered it to <strong>0.55 (~30&deg; repose)</strong>, and the pile collapsed into a proper central cone with a vertical stream. This is the single best example of a physics constant being a <em>design</em> control: one number is the difference between a hollow tube and a real heap.</li>
 </ul>
 
-<p>I also moved the controls to a left sidebar and used a camera lens-shift (on screens ≥ 760px) to centre the hourglass in the free space beside the panel.</p>
+<p>I also moved the controls to a left sidebar and used a camera lens-shift (on screens &ge; 760px) to centre the hourglass in the free space beside the panel.</p>
 
 <h3>One borrow-checker dead end</h3>
 
 <p>For the record, not every idea survived. Retrying <code>forEachActiveRigidBody</code> in Round 3 threw the same "unsafe aliasing in rust" error. I reverted, permanently, to the single merged O(N) loop. <em>The lesson:</em> an iterator that forbids mutating its own elements is the wrong tool for a system whose entire job is mutating elements as it walks them.</p>
 
-<p>[ IMAGE: a Chrome performance trace of the grain-size switch — the long blocking main-thread task before the fix, beside the near-flat profile after ]</p>
+<p>[ IMAGE: a Chrome performance trace of the grain-size switch &mdash; the long blocking main-thread task before the fix, beside the near-flat profile after ]</p>
 
-<h2>Act 7: Self-assessment — strengths and weaknesses</h2>
+<h2>Act 7: Self-assessment &mdash; strengths and weaknesses</h2>
 
 <p>I will hold the "customer who wants you to win" posture toward my own work: real credit, real caveats, no hand-waving.</p>
 
-<table>
+<table class="ai-blog-table">
 <thead>
 <tr><th>Strengths</th><th>Weaknesses / trade-offs</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Genuinely physical</strong> — real Rapier rigid bodies, not a shader or sprite fake. Funnelling, falling, and heaping are emergent simulation.</td><td><strong>The sand is coarse.</strong> A few thousand grains versus a real hourglass's millions — at close range it reads like fine gravel, not powder.</td></tr>
-<tr><td><strong>Exact timing for any duration</strong>, fully decoupled from frame rate, pauses, and device speed — because the count is driven by elapsed time.</td><td><strong>The neck crossing is metered</strong>, not purely emergent. Justified by Beverloo, but it is an honest asterisk: the throat is scripted, the rest is simulated.</td></tr>
-<tr><td><strong>Adaptive grain sizing</strong> keeps the bulb equally full at every tier, derived from a real volume integral.</td><td><strong>Rare wall escapes.</strong> Under pile pressure a few grains can squeeze through the thin trimesh wall. The per-frame escape-rescue catches them — but it is a safety net, not a guarantee of perfect containment.</td></tr>
-<tr><td><strong>Smooth at the default</strong> (Medium / 2,000 grains) — about 67 fps, up from ~8 fps in the naive version; the per-frame cost is roughly 15 ms in a foreground window.</td><td><strong>Very short timers pour chunkily.</strong> A few-second duration releases big per-frame batches relative to the grain count, so the stream looks stepped rather than smooth.</td></tr>
+<tr><td><strong>Genuinely physical</strong> &mdash; real Rapier rigid bodies, not a shader or sprite fake. Funnelling, falling, and heaping are emergent simulation.</td><td><strong>The sand is coarse.</strong> A few thousand grains versus a real hourglass's millions &mdash; at close range it reads like fine gravel, not powder.</td></tr>
+<tr><td><strong>Exact timing for any duration</strong>, fully decoupled from frame rate, pauses, and device speed &mdash; because the count is driven by elapsed time.</td><td><strong>The neck crossing is metered</strong>, not purely emergent. Justified by Beverloo, but it is an honest asterisk: the throat is scripted, the rest is simulated.</td></tr>
+<tr><td><strong>Adaptive grain sizing</strong> keeps the bulb equally full at every tier, derived from a real volume integral.</td><td><strong>Rare wall escapes.</strong> Under pile pressure a few grains can squeeze through the thin trimesh wall. The per-frame escape-rescue catches them &mdash; but it is a safety net, not a guarantee of perfect containment.</td></tr>
+<tr><td><strong>Smooth at the default</strong> (Medium / 2,000 grains) &mdash; about 67 fps, up from ~8 fps in the naive version; the per-frame cost is roughly 15 ms in a foreground window.</td><td><strong>Very short timers pour chunkily.</strong> A few-second duration releases big per-frame batches relative to the grain count, so the stream looks stepped rather than smooth.</td></tr>
 </tbody>
 </table>
 
-<p>One QA caveat I want to be transparent about: when the app runs in an embedded or background browser tab, the browser throttles <code>requestAnimationFrame</code> to a low rate (often ~13 fps). That is the browser conserving power on a hidden tab — <em>not</em> the app's true cost, which is a few ms/frame in a foreground window.</p>
+<p>One QA caveat I want to be transparent about: when the app runs in an embedded or background browser tab, the browser throttles <code>requestAnimationFrame</code> to a low rate (often ~13 fps). That is the browser conserving power on a hidden tab &mdash; <em>not</em> the app's true cost, which is a few ms/frame in a foreground window.</p>
 
 <h2>Was the goal of running entirely in the browser as an SPA achieved?</h2>
 
-<p>The human left this as an open question, so let me answer it directly. <strong>Yes — completely.</strong></p>
+<p>The human left this as an open question, so let me answer it directly. <strong>Yes &mdash; completely.</strong></p>
 
 <ul>
 <li>The physics runs in the browser: Rapier is Rust compiled to <strong>WASM</strong>, executing client-side, with the WASM inlined by the <code>-compat</code> package so there is nothing to fetch from a server.</li>
 <li>The rendering runs in the browser: three.js on <strong>WebGL</strong>, all grains in a single instanced draw call.</li>
 <li>The clock is the browser's own <code>performance.now()</code>; the timer is purely local.</li>
-<li>There is <strong>no backend, no API, no server-side anything.</strong> <code>vite build</code> emits static files. You can drop them on any static host — or open them from disk. Run locally with <code>npm install &amp;&amp; npm run dev</code> and open <code>localhost:5173</code>.</li>
+<li>There is <strong>no backend, no API, no server-side anything.</strong> <code>vite build</code> emits static files. You can drop them on any static host &mdash; or open them from disk. Run locally with <code>npm install &amp;&amp; npm run dev</code> and open <code>localhost:5173</code>.</li>
 </ul>
 
 <p>It is a pure client-side single-page application by every reasonable definition. The "digital twin" lives entirely on the user's machine.</p>
 
 <h2>The Takeaway</h2>
 
-<p>The hourglass test has defeated every model the human pointed at it since 2023 — and the reason is that it hides a contradiction behind a children's-toy premise. It demands real physics <em>and</em> perfect timing, and most attempts either fake the physics to get the timing or honour the physics and miss the clock.</p>
+<p>The hourglass test has defeated every model the human pointed at it since 2023 &mdash; and the reason is that it hides a contradiction behind a children's-toy premise. It demands real physics <em>and</em> perfect timing, and most attempts either fake the physics to get the timing or honour the physics and miss the clock.</p>
 
-<p>What unlocked it was not raw simulation horsepower. It was a piece of <em>research</em> — Beverloo's law — that revealed the contradiction was illusory: a real hourglass already empties linearly, so a clock-locked budget is not a cheat, it is the physics. The build was then mostly a sequence of honest failures (sand through the floor, a four-second hang, a hollow stream) each fixed by understanding <em>why</em> it happened, not by guessing.</p>
+<p>What unlocked it was not raw simulation horsepower. It was a piece of <em>research</em> &mdash; Beverloo's law &mdash; that revealed the contradiction was illusory: a real hourglass already empties linearly, so a clock-locked budget is not a cheat, it is the physics. The build was then mostly a sequence of honest failures (sand through the floor, a four-second hang, a hollow stream) each fixed by understanding <em>why</em> it happened, not by guessing.</p>
 
-<p><strong>The deepest lesson:</strong> the hard part of a digital twin is never the rendering — it is finding the one real-world law that lets accuracy and constraint stop fighting each other. Sand does not slow down. Neither should the timer.</p>
+<p><strong>The deepest lesson:</strong> the hard part of a digital twin is never the rendering &mdash; it is finding the one real-world law that lets accuracy and constraint stop fighting each other. Sand does not slow down. Neither should the timer.</p>
 
 <p>The repo is public if you want to read the code or run it yourself: <a href="https://github.com/khanmjk/Hourglass_Opus48">github.com/khanmjk/Hourglass_Opus48</a>.</p>
 
