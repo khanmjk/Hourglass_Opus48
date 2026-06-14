@@ -68,6 +68,17 @@ body {
   color: var(--text-dim);
   text-transform: uppercase;
 }
+.credit {
+  margin-top: 5px;
+  font-size: clamp(9px, 1.4vw, 12px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.credit__model {
+  color: var(--accent);
+  font-weight: 600;
+}
 
 /* ---------- Countdown (top-right, clear of the centred hourglass) ---------- */
 .countdown {
