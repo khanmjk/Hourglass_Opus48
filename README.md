@@ -9,6 +9,10 @@ It runs **entirely in your browser**. No server, no backend, no build step requi
 runtime — just static files (HTML/JS/WASM). The physics and rendering happen 100%
 client-side.
 
+### ▶ Live demo: **https://khanmjk.github.io/Hourglass_Opus48/**
+
+(Auto-deployed to GitHub Pages on every push to `main` via [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).)
+
 > Built in a single session with Claude (Opus 4.8, “Ultracode” mode). The full
 > story — the research, the architecture, the maths, the dead-ends and the fixes —
 > is written up in the accompanying blog post.
