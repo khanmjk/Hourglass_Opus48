@@ -56,7 +56,58 @@
 
 <p>The adversarial pass earned its keep. Before any code existed, it named five risks: the timing <em>tail</em> (will the last grains actually be gone at zero?), <em>tunnelling</em> of small fast balls through a thin shell, <em>clogging</em> at the neck, <em>determinism</em> of the gate metering, and <em>performance</em> at high grain counts. Four of those five became real bugs I had to fix. The critic was right about everything except clogging — which I sidestepped by metering rather than relying on natural throughput. Hold that thought; it is Act 6, beat 4.</p>
 
-<p>[ IMAGE: a whiteboard-style diagram of the multi-agent design workflow — four research agents fanning into a synthesis node, then an adversarial-critique node ]</p>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" width="100%" role="img" aria-label="The Ultracode design workflow: four research agents fan into a synthesis step, then an adversarial critique, producing a build-ready design.">
+  <defs>
+    <marker id="hg-arrow" markerWidth="10" markerHeight="10" refX="7.5" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7689"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="560" rx="18" fill="#0d1119"/>
+  <text x="440" y="40" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, sans-serif" font-size="23" font-weight="700" fill="#f0b95e">The &#8220;Ultracode&#8221; design workflow</text>
+  <text x="440" y="64" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="13" fill="#9aa6ba">research &#8594; synthesis &#8594; adversarial critique — before a line of code</text>
+  <text x="40" y="103" font-family="Segoe UI, system-ui, sans-serif" font-size="12" letter-spacing="1.5" fill="#6b7689">RESEARCH &#183; 4 AGENTS IN PARALLEL</text>
+  <g font-family="Segoe UI, system-ui, sans-serif">
+    <rect x="40" y="114" width="182" height="84" rx="10" fill="#161f30" stroke="#2b3a52" stroke-width="1.5"/>
+    <text x="131" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="#eaf0fa">Engine choice</text>
+    <text x="131" y="166" text-anchor="middle" font-size="11.5" fill="#94a2ba">Rapier vs cannon-es</text>
+    <text x="131" y="182" text-anchor="middle" font-size="11.5" fill="#94a2ba">ammo &#183; Jolt</text>
+    <rect x="246" y="114" width="182" height="84" rx="10" fill="#161f30" stroke="#2b3a52" stroke-width="1.5"/>
+    <text x="337" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="#eaf0fa">Rapier API</text>
+    <text x="337" y="166" text-anchor="middle" font-size="11.5" fill="#94a2ba">trimesh &#183; soft-CCD</text>
+    <text x="337" y="182" text-anchor="middle" font-size="11.5" fill="#94a2ba">sleeping islands</text>
+    <rect x="452" y="114" width="182" height="84" rx="10" fill="#161f30" stroke="#2b3a52" stroke-width="1.5"/>
+    <text x="543" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="#eaf0fa">Rendering</text>
+    <text x="543" y="166" text-anchor="middle" font-size="11.5" fill="#94a2ba">three.js InstancedMesh</text>
+    <text x="543" y="182" text-anchor="middle" font-size="11.5" fill="#94a2ba">glass material</text>
+    <rect x="658" y="114" width="182" height="84" rx="10" fill="#161f30" stroke="#2b3a52" stroke-width="1.5"/>
+    <text x="749" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="#eaf0fa">Granular flow</text>
+    <text x="749" y="166" text-anchor="middle" font-size="11.5" fill="#94a2ba">Beverloo&#8217;s law</text>
+    <text x="749" y="182" text-anchor="middle" font-size="11.5" fill="#94a2ba">clogging threshold</text>
+  </g>
+  <g stroke="#54607a" stroke-width="1.6" fill="none" marker-end="url(#hg-arrow)">
+    <path d="M131,198 L392,250"/>
+    <path d="M337,198 L424,250"/>
+    <path d="M543,198 L456,250"/>
+    <path d="M749,198 L488,250"/>
+  </g>
+  <rect x="270" y="252" width="340" height="66" rx="12" fill="#18233b" stroke="#f0b95e" stroke-width="2"/>
+  <text x="440" y="282" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f0b95e">SYNTHESIS</text>
+  <text x="440" y="302" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="12.5" fill="#c3cee0">reconcile findings &#8594; one architecture</text>
+  <line x1="440" y1="318" x2="440" y2="360" stroke="#6b7689" stroke-width="1.8" marker-end="url(#hg-arrow)"/>
+  <rect x="270" y="362" width="340" height="66" rx="12" fill="#2a1d12" stroke="#e0903c" stroke-width="2"/>
+  <text x="440" y="392" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="700" fill="#f0a85a">ADVERSARIAL CRITIQUE</text>
+  <text x="440" y="412" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="12.5" fill="#d8c3a8">attack the plan first</text>
+  <g font-family="Segoe UI, system-ui, sans-serif">
+    <text x="636" y="372" font-size="10.5" letter-spacing="1" fill="#7e8aa0">5 RISKS FLAGGED</text>
+    <text x="636" y="390" font-size="11.5" fill="#9aa6ba">tail &#183; tunnelling</text>
+    <text x="636" y="406" font-size="11.5" fill="#9aa6ba">clogging &#183; gate</text>
+    <text x="636" y="422" font-size="11.5" fill="#9aa6ba">determinism &#183; perf</text>
+  </g>
+  <line x1="440" y1="428" x2="440" y2="470" stroke="#6b7689" stroke-width="1.8" marker-end="url(#hg-arrow)"/>
+  <rect x="300" y="472" width="280" height="58" rx="12" fill="#13231a" stroke="#5fae6f" stroke-width="2"/>
+  <text x="440" y="507" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="14" font-weight="700" fill="#7fd08f">BUILD-READY DESIGN</text>
+</svg>
+<p><em>The "Ultracode" design workflow: four research agents fan into a synthesis step, then an adversarial critique attacks the plan before a line of code is written.</em></p>
 
 <h2>Act 3: The architecture — one profile, six modules</h2>
 
