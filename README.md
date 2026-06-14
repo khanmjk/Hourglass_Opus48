@@ -1,5 +1,8 @@
 # ⏳ Sands of Time — a digital-twin hourglass timer
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Run_it_in_your_browser-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white)](https://khanmjk.github.io/Hourglass_Opus48/)
+&nbsp;[![Deploy](https://github.com/khanmjk/Hourglass_Opus48/actions/workflows/deploy.yml/badge.svg)](https://github.com/khanmjk/Hourglass_Opus48/actions/workflows/deploy.yml)
+
 A single-page web app that renders a **3D hourglass whose sand is thousands of real
 rigid-body grains**. Pick a duration, press start, and the sand pours from the top
 bulb, through the neck, and heaps up in the bottom — funnelling, streaming and piling
